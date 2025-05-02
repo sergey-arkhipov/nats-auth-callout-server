@@ -1,0 +1,6 @@
+FROM debian:bookworm-slim
+ARG NATS_URL
+WORKDIR /service
+COPY auth_service /service
+
+CMD ["/bin/bash", "-c", "/service/go_server_auth"]
