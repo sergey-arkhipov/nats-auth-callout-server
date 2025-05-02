@@ -6,3 +6,4 @@ auth:
   issuer_seed: "SAAGXPXE6IKAIQDYYJGZGNC6SD4PPMF5IZNVXV6UAKYJUFTMS4RWQZXWSI"
   xkey_seed: "SXAKLMX3W2LKKRE5GVBWAOTOMIVJ3YIJQKM3OAW4AKZ23WY4TPTNEJ53TE"
   users_file: "auth-server/users.json"
+environment: "development"
