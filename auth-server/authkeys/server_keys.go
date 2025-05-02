@@ -5,22 +5,16 @@ package authkeys
 
 import (
 	"fmt"
+	"sergey-arkhipov/nats-auth-callout-server/auth-server/auth"
 
 	"github.com/nats-io/nkeys"
 )
 
-// KeyPairs for store server keys
-type KeyPairs struct {
-	Issuer  nkeys.KeyPair
-	Curve   nkeys.KeyPair
-	HasXKey bool
-}
-
 // Parse return KeyPairs from config
 // Parse the issuer account signing key
 // Parse the xkey seed if present
-func Parse(issuerSeed, xkeySeed string) (*KeyPairs, error) {
-	kp := &KeyPairs{}
+func Parse(issuerSeed, xkeySeed string) (*auth.KeyPairs, error) {
+	kp := &auth.KeyPairs{}
 
 	var err error
 	kp.Issuer, err = nkeys.FromSeed([]byte(issuerSeed))
