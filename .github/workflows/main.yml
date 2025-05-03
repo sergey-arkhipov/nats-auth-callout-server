@@ -35,10 +35,6 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.0
-          args: --timeout=5m --verbose
-          # Ensure compatibility with Go 1.24.2
-          skip-pkg-cache: true
-          skip-build-cache: true
 
   test:
     name: Test
