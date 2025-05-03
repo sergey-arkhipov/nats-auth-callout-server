@@ -53,7 +53,11 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("nats connect: %w", err)
 	}
-	defer nc.Drain()
+	defer func() {
+		if err := nc.Drain(); err != nil {
+			log.Printf("failed to drain NATS connection: %v", err)
+		}
+	}()
 
 	// Microservice setup
 	srv, err := micro.AddService(nc, micro.Config{

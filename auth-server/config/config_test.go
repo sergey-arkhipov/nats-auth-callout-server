@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"log"
 	"os"
 	"sergey-arkhipov/nats-auth-callout-server/auth-server/config"
 	"testing"
@@ -9,11 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func removeTmpFile(tmpFile *os.File) {
+	if err := os.Remove(tmpFile.Name()); err != nil {
+		log.Printf("failed to remove temporary file %s: %v", tmpFile.Name(), err)
+	}
+}
+
 func TestLoadConfig(t *testing.T) {
 	t.Run("successful load", func(t *testing.T) {
 		tmpFile, err := os.CreateTemp("", "test_config_*.yml")
 		require.NoError(t, err)
-		defer os.Remove(tmpFile.Name())
+
+		defer removeTmpFile(tmpFile)
 
 		_, err = tmpFile.WriteString(`
 environment: test
@@ -90,7 +98,7 @@ auth:
 			t.Run(tt.name, func(t *testing.T) {
 				tmpFile, err := os.CreateTemp("", "parse_fail_*.yml")
 				require.NoError(t, err)
-				defer os.Remove(tmpFile.Name())
+				defer removeTmpFile(tmpFile)
 
 				_, err = tmpFile.WriteString(tt.config)
 				require.NoError(t, err)
@@ -106,7 +114,8 @@ auth:
 	t.Run("default environment", func(t *testing.T) {
 		tmpFile, err := os.CreateTemp("", "default_env_*.yml")
 		require.NoError(t, err)
-		defer os.Remove(tmpFile.Name())
+
+		defer removeTmpFile(tmpFile)
 
 		_, err = tmpFile.WriteString(`
 nats:
@@ -135,7 +144,8 @@ func TestMustLoad(t *testing.T) {
 	t.Run("returns config on success", func(t *testing.T) {
 		tmpFile, err := os.CreateTemp("", "valid_config_*.yml")
 		require.NoError(t, err)
-		defer os.Remove(tmpFile.Name())
+
+		defer removeTmpFile(tmpFile)
 
 		_, err = tmpFile.WriteString(`
 nats:
