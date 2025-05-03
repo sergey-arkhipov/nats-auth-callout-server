@@ -64,7 +64,8 @@ auth:
 			t.Run(tt.name, func(t *testing.T) {
 				tmpFile, err := os.CreateTemp("", "bad_config_*.yml")
 				require.NoError(t, err)
-				defer os.Remove(tmpFile.Name())
+
+				defer removeTmpFile(tmpFile)
 
 				_, err = tmpFile.WriteString(tt.config)
 				require.NoError(t, err)

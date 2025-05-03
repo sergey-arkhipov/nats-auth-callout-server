@@ -133,7 +133,9 @@ func (h *Handler) respond(req micro.Request, userNkey, serverID, userJwt, errMsg
 	data, err := rc.Encode(h.keyPairs.Issuer)
 	if err != nil {
 		log.Printf("encoding response JWT: %v", err)
-		req.Respond(nil)
+		if err := req.Respond([]byte("Failed to encoding response JWT")); err != nil {
+			log.Printf("failed to send response: %v", err)
+		}
 		return
 	}
 
@@ -142,13 +144,17 @@ func (h *Handler) respond(req micro.Request, userNkey, serverID, userJwt, errMsg
 	if xkey != "" {
 		if h.keyPairs.Curve == nil {
 			log.Printf("xkey encryption not supported: no curve key pair")
-			req.Respond([]byte("Encryption not supported: missing curve key pair"))
+			if err := req.Respond([]byte("Encryption not supported: missing curve key pair")); err != nil {
+				log.Printf("failed to send response: %v", err)
+			}
 			return
 		}
 		encrypted, err := h.keyPairs.Curve.Seal([]byte(data), xkey)
 		if err != nil {
 			log.Printf("encrypting response JWT: %v", err)
-			req.Respond([]byte("Failed to encrypt response"))
+			if err := req.Respond([]byte("Failed to encrypt response")); err != nil {
+				log.Printf("failed to send response: %v", err)
+			}
 			return
 		}
 		data = string(encrypted)
