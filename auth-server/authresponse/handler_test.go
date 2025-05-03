@@ -205,6 +205,6 @@ func TestHandler_UserClaims(t *testing.T) {
 		require.Equal(t, userPubKey, decoded.Subject, "Expected subject to be user public key")
 		require.Equal(t, issuerPubKey, decoded.Issuer, "Expected issuer to be account public key")
 		require.Equal(t, issuerPubKey, decoded.Audience, "Expected audience to be account public key")
-		require.Equal(t, testUser.Permissions.Pub.Allow, decoded.Permissions.Pub.Allow, "Expected permissions to match")
+		require.Equal(t, testUser.Permissions.Pub.Allow, decoded.Pub.Allow, "Expected permissions to match")
 	})
 }
