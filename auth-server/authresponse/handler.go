@@ -159,5 +159,8 @@ func (h *Handler) respond(req micro.Request, userNkey, serverID, userJwt, errMsg
 		}
 		data = string(encrypted)
 	}
-	req.Respond([]byte(data))
+	// Send the final response
+	if err := req.Respond([]byte(data)); err != nil {
+		log.Printf("failed to send response: %v", err)
+	}
 }
