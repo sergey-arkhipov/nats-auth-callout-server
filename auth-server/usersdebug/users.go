@@ -1,4 +1,4 @@
-// pkg/usersdebug/users.go
+// Package usersdebug return users for test purpose
 package usersdebug
 
 import (
@@ -7,10 +7,12 @@ import (
 	"github.com/nats-io/jwt/v2"
 )
 
+// Repository allow call test user
 type Repository struct {
 	users map[string]*auth.User
 }
 
+// New return struct with users for test
 func New() *Repository {
 	return &Repository{
 		users: map[string]*auth.User{
@@ -39,6 +41,7 @@ func New() *Repository {
 	}
 }
 
+// Get return User from test file
 func (r *Repository) Get(username string) (*auth.User, bool) {
 	user, exists := r.users[username]
 	return user, exists
