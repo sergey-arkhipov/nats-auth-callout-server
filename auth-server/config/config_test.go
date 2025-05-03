@@ -74,10 +74,22 @@ auth:
 `)
 		defer removeTmpFile(tmpFile)
 
-		os.Setenv("NATS_URL", "nats://env:4222")
-		os.Setenv("ENVIRONMENT", "production")
-		defer os.Unsetenv("NATS_URL")
-		defer os.Unsetenv("ENVIRONMENT")
+		// Устанавливаем переменные окружения с проверкой ошибок
+		if err := os.Setenv("NATS_URL", "nats://env:4222"); err != nil {
+			t.Fatalf("failed to set NATS_URL: %v", err)
+		}
+		if err := os.Setenv("ENVIRONMENT", "production"); err != nil {
+			t.Fatalf("failed to set ENVIRONMENT: %v", err)
+		}
+		// Отменяем переменные окружения с проверкой ошибок
+		defer func() {
+			if err := os.Unsetenv("NATS_URL"); err != nil {
+				t.Errorf("failed to unset NATS_URL: %v", err)
+			}
+			if err := os.Unsetenv("ENVIRONMENT"); err != nil {
+				t.Errorf("failed to unset ENVIRONMENT: %v", err)
+			}
+		}()
 
 		cfg, err := config.Load(tmpFile.Name())
 		require.NoError(t, err)
@@ -131,12 +143,12 @@ environment: test`,
 			{
 				"empty file",
 				"",
-				"auth.issuer_seed is required", // Ожидаем валидационную ошибку, так как файл пустой
+				"auth.issuer_seed is required",
 			},
 			{
 				"invalid yaml",
 				"invalid: [",
-				"failed to read config file", // Ошибка парсинга на уровне ReadInConfig
+				"failed to read config file",
 			},
 		}
 		for _, tt := range tests {
