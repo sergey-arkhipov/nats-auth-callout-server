@@ -57,7 +57,7 @@ func (h *Handler) HandleRequest(req micro.Request) {
 		h.respond(req, "", "", "", fmt.Sprintf("decoding authorization request: %v", err))
 		return
 	}
-
+	// log.Printf("Decoded AuthorizationRequestClaims: %+v", rc)
 	// Validate user credentials
 	user, err := h.validateUser(rc)
 	if err != nil {
