@@ -5,64 +5,49 @@ package config
 
 import (
 	"fmt"
-	"os"
+	"log"
+	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 )
 
-// Config represents the application configuration structure.
-// It includes NATS connection details, authentication keys,
-// and environment settings.
-//
-// Example YAML:
-//
-//	environment: production
-//	nats:
-//	  url: nats://localhost:4222
-//	  user: auth
-//	  pass: securepass
-//	auth:
-//	  issuer_seed: SAAG...
-//	  xkey_seed: SXAK...
-//	  users_file: path/to/users.json
+// Config defines the structure for the application configuration.
 type Config struct {
 	Nats struct {
-		URL  string `yaml:"url"`  // NATS server URL (e.g., "nats://localhost:4222")
-		User string `yaml:"user"` // NATS username
-		Pass string `yaml:"pass"` // NATS password
-	} `yaml:"nats"`
+		URL  string `mapstructure:"url"`
+		User string `mapstructure:"user"`
+		Pass string `mapstructure:"pass"`
+	} `mapstructure:"nats"`
 
 	Auth struct {
-		IssuerSeed string `yaml:"issuer_seed"` // Seed for issuer key pair (required)
-		XKeySeed   string `yaml:"xkey_seed"`   // Seed for curve key pair (required)
-		UsersFile  string `yaml:"users_file"`  // Path to users JSON file
-	} `yaml:"auth"`
+		IssuerSeed string `mapstructure:"issuer_seed"`
+		XKeySeed   string `mapstructure:"xkey_seed"`
+		UsersFile  string `mapstructure:"users_file"`
+	} `mapstructure:"auth"`
 
-	Environment string `yaml:"environment"` // Runtime environment (development|production)
+	Environment string `mapstructure:"environment"`
 }
 
-// Load reads and parses the configuration file from the given path.
-// It validates required fields and sets default values where appropriate.
-// Returns an error if the file cannot be read, parsed, or if required fields are missing.
-//
-// Example:
-//
-//	cfg, err := config.Load("config.yml")
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
+// Load loads the configuration using viper, supporting YAML and environment variables.
 func Load(configPath string) (*Config, error) {
-	data, err := os.ReadFile(configPath)
-	if err != nil {
+	// Initialize viper
+	v := viper.New()
+	v.SetConfigFile(configPath)
+	v.SetConfigType("yaml")
+
+	// Enable environment variable overrides without prefix
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	// Read the config file
+	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
-	// Explicit check for empty file
-	if len(data) == 0 {
-		return nil, fmt.Errorf("config file is empty")
-	}
+
+	// Unmarshal into Config struct
 	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config into struct: %w", err)
 	}
 
 	// Validation
@@ -76,16 +61,11 @@ func Load(configPath string) (*Config, error) {
 		cfg.Environment = "development" // Default value
 	}
 
+	log.Printf("Loaded config: %+v", cfg)
 	return &cfg, nil
 }
 
-// MustLoad is similar to Load but panics if the configuration cannot be loaded.
-// Suitable for use during application initialization where configuration errors
-// should terminate the application.
-//
-// Example:
-//
-//	cfg := config.MustLoad("config.yml")
+// MustLoad loads the configuration and panics on error.
 func MustLoad(configPath string) *Config {
 	cfg, err := Load(configPath)
 	if err != nil {
