@@ -27,7 +27,7 @@ jobs:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-v3
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-v4
           restore-keys: |
             ${{ runner.os }}-go-
 
@@ -57,9 +57,9 @@ jobs:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-v3
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-v4
           restore-keys: |
             ${{ runner.os }}-go-
 
       - name: Run tests
-        run:
+        run: go test -v -cover ./...
