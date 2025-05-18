@@ -1,25 +1,23 @@
-// Package authresponse to get request and make response
-package authresponse
-
-import (
-	"errors"
-	"fmt"
-	"log"
-	"sergey-arkhipov/nats-auth-callout-server/auth-server/auth"
-
-	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nats.go/micro"
-)
-
 // Package authresponse handles NATS authorization request processing, including
 // user authentication, JWT generation, and response creation with optional xkey
 // encryption. It integrates with a UserRepository to validate user credentials
 // and uses key pairs for signing and encrypting responses.
+package authresponse
 
-/*
-Handler processes NATS authorization requests, validates user credentials,
-and generates signed JWT responses.
-*/
+import (
+	"crypto/sha256"
+	"errors"
+	"fmt"
+	"log"
+	"sergey-arkhipov/nats-auth-callout-server/auth-server/auth"
+	"sergey-arkhipov/nats-auth-callout-server/auth-server/tokenvalidation"
+
+	"github.com/nats-io/jwt/v2"
+	"github.com/nats-io/nats.go/micro"
+	"github.com/sirupsen/logrus"
+)
+
+// Handler processes NATS authorization requests.
 type Handler struct {
 	keyPairs *auth.KeyPairs
 	userRepo UserRepository
@@ -38,11 +36,9 @@ func NewHandler(keyPairs *auth.KeyPairs, userRepo UserRepository) *Handler {
 	}
 }
 
-/*
-HandleRequest processes an incoming NATS authorization request.
-It decodes the request, validates the user, generates a user JWT, and responds
-with a signed authorization response, optionally encrypted with xkey.
-*/
+// HandleRequest processes an incoming NATS authorization request.
+// It decodes the request, validates the user, generates a user JWT, and responds
+// with a signed authorization response, optionally encrypted with xkey.
 func (h *Handler) HandleRequest(req micro.Request) {
 	// Decode the request token, handling xkey decryption if present
 	token, err := h.decodeRequest(req)
@@ -57,16 +53,20 @@ func (h *Handler) HandleRequest(req micro.Request) {
 		h.respond(req, "", "", "", fmt.Sprintf("decoding authorization request: %v", err))
 		return
 	}
-	// log.Printf("Decoded AuthorizationRequestClaims: %+v", rc)
+
 	// Validate user credentials
-	user, err := h.validateUser(rc)
+	user, userID, err := h.validateUser(rc)
 	if err != nil {
 		h.respond(req, rc.UserNkey, rc.Server.ID, "", err.Error())
 		return
 	}
 
-	// Generate user JWT
-	userJWT, err := h.generateUserJWT(rc.UserNkey, rc.ConnectOptions.Username, user)
+	// Generate user JWT, using userID from token or rc.ConnectOptions.Username
+	username := userID
+	if username == "" {
+		username = rc.ConnectOptions.Username
+	}
+	userJWT, err := h.generateUserJWT(rc.UserNkey, username, user)
 	if err != nil {
 		h.respond(req, rc.UserNkey, rc.Server.ID, "", fmt.Sprintf("generating user JWT: %v", err))
 		return
@@ -94,16 +94,104 @@ func (h *Handler) decodeRequest(req micro.Request) ([]byte, error) {
 	return token, nil
 }
 
-// validateUser checks if the user exists and has valid credentials.
-func (h *Handler) validateUser(rc *jwt.AuthorizationRequestClaims) (*auth.User, error) {
+// validateUser validates the user based on the AuthorizationRequestClaims.
+// It supports token-based authentication using nats_token (extracting user_id from token)
+// and username/password authentication. For token-based auth, it converts permissions
+// from map[string]any to jwt.Permissions, including resp permissions.
+func (h *Handler) validateUser(rc *jwt.AuthorizationRequestClaims) (*auth.User, string, error) {
+	// Token-based authentication
+	if rc.ConnectOptions.Token != "" {
+		userID, permissions, err := tokenvalidation.ValidateNatsToken(rc.ConnectOptions.Token)
+		if err != nil {
+			logrus.WithError(err).Error("Failed to validate nats_token")
+			return nil, "", fmt.Errorf("validating nats_token: %v", err)
+		}
+
+		// Convert permissions to jwt.Permissions
+		jwtPerms := jwt.Permissions{}
+		if pub, ok := permissions["pub"].(map[string]any); ok {
+			var pubPerm jwt.Permission
+			if allow, ok := pub["allow"].([]any); ok {
+				allowStrings := make([]string, len(allow))
+				for i, v := range allow {
+					allowStrings[i] = v.(string)
+				}
+				pubPerm.Allow = allowStrings
+			}
+			if deny, ok := pub["deny"].([]any); ok {
+				denyStrings := make([]string, len(deny))
+				for i, v := range deny {
+					denyStrings[i] = v.(string)
+				}
+				pubPerm.Deny = denyStrings
+			}
+			if len(pubPerm.Allow) > 0 || len(pubPerm.Deny) > 0 {
+				jwtPerms.Pub = pubPerm
+			}
+		}
+		if sub, ok := permissions["sub"].(map[string]any); ok {
+			var subPerm jwt.Permission
+			if allow, ok := sub["allow"].([]any); ok {
+				allowStrings := make([]string, len(allow))
+				for i, v := range allow {
+					allowStrings[i] = v.(string)
+				}
+				subPerm.Allow = allowStrings
+			}
+			if deny, ok := sub["deny"].([]any); ok {
+				denyStrings := make([]string, len(deny))
+				for i, v := range deny {
+					denyStrings[i] = v.(string)
+				}
+				subPerm.Deny = denyStrings
+			}
+			if len(subPerm.Allow) > 0 || len(subPerm.Deny) > 0 {
+				jwtPerms.Sub = subPerm
+			}
+		}
+		if resp, ok := permissions["resp"].(map[string]any); ok {
+			if max, ok := resp["max"].(float64); ok {
+				jwtPerms.Resp = &jwt.ResponsePermission{MaxMsgs: int(max)}
+			}
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"user_id":    userID,
+			"token_hash": fmt.Sprintf("%x", sha256.Sum256([]byte(rc.ConnectOptions.Token)))[:8],
+		}).Info("Validated nats_token")
+
+		return &auth.User{
+			Permissions: jwtPerms,
+			Pass:        "",            // Password not used for token auth
+			Account:     "DEVELOPMENT", // Match alice's account from New()
+		}, userID, nil
+	}
+
+	// Username/password authentication
+	if rc.ConnectOptions.Username == "" || rc.ConnectOptions.Password == "" {
+		logrus.Error("Username or password missing")
+		return nil, "", errors.New("username or password missing")
+	}
 	user, exists := h.userRepo.Get(rc.ConnectOptions.Username)
 	if !exists {
-		return nil, errors.New("user not found")
+		logrus.WithFields(logrus.Fields{
+			"username": rc.ConnectOptions.Username,
+		}).Error("User not found")
+		return nil, "", errors.New("user not found")
 	}
 	if user.Pass != rc.ConnectOptions.Password {
-		return nil, errors.New("invalid credentials")
+		logrus.WithFields(logrus.Fields{
+			"username": rc.ConnectOptions.Username,
+		}).Error("Invalid credentials")
+		return nil, "", errors.New("invalid credentials")
 	}
-	return user, nil
+	logrus.WithFields(logrus.Fields{
+		"username": rc.ConnectOptions.Username,
+		"Pass":     rc.ConnectOptions.Password,
+		"Account":  user.Account,
+	}).Info("Validated user login/pass")
+
+	return user, "", nil
 }
 
 // generateUserJWT creates and signs a user JWT for the given user.
