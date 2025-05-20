@@ -150,11 +150,10 @@ func (h *Handler) validateUser(rc *jwt.AuthorizationRequestClaims) (*auth.User, 
 			}
 		}
 		if resp, ok := permissions["resp"].(map[string]any); ok {
-			if max, ok := resp["max"].(float64); ok {
-				jwtPerms.Resp = &jwt.ResponsePermission{MaxMsgs: int(max)}
+			if maxMsgs, ok := resp["max"].(float64); ok {
+				jwtPerms.Resp = &jwt.ResponsePermission{MaxMsgs: int(maxMsgs)}
 			}
 		}
-
 		logrus.WithFields(logrus.Fields{
 			"user_id":    userID,
 			"token_hash": fmt.Sprintf("%x", sha256.Sum256([]byte(rc.ConnectOptions.Token)))[:8],

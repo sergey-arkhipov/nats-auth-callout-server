@@ -1,4 +1,4 @@
 FROM  nats:alpine
-COPY .nats-server.conf /etc/nats/nats-server.conf
+COPY nats-server.conf /etc/nats/nats-server.conf
 CMD ["nats-server", "--config", "/etc/nats/nats-server.conf"]
 
