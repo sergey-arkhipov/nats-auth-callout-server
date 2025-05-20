@@ -42,16 +42,16 @@ cd nats-auth-tool
 
 ### 2. Configure Environment
 
-Set the `NATS_TOKEN_SECRET` environment variable for `generate_token`:
+Build custom NATS server with nats-server.conf:
 
 ```bash
-export NATS_TOKEN_SECRET="your-secret-key"
+docker build --no-cache -t nats-server-with-callback -f Dockerfile.nats .
 ```
 
 Ensure a NATS server is running (e.g., locally):
 
 ```bash
-docker run -d -p 4222:4222 nats:latest
+docker run -d -p 4222:4222 nats-server-with-callback
 ```
 
 ### 3. Build the Docker Image
@@ -71,16 +71,21 @@ The `auth-server` is the default service, reading configuration from `/app/confi
 Run the service:
 
 ```bash
-docker run --rm -e NATS_TOKEN_SECRET="your-secret-key" -p 4222:4222 nats-auth-tool
+docker run --rm -e NATS_TOKEN_SECRET="your-secret-key" -e NATS_URL="nats://your-nats-server:4222" nats-auth-tool
 ```
 
-- Maps port `4222` (adjust if `auth-server` uses a different port).
-- Uses `config.yml` for NATS connection details (`nats://localhost:4222`, user `auth`, pass `auth`) and authentication keys.
+Configuration:
 
-If the NATS server runs on the host, use `--network=host`:
+    NATS_TOKEN_SECRET - secret key for token generation (required)
+
+    NATS_URL - URL of your NATS server (required, e.g. nats://nats-server:4222)
+
+    The service doesn't expose any ports as it's a client to NATS server, not a server itself
+
+If the NATS server runs on the host and you want to connect to it directly, you can use host networking:
 
 ```bash
-docker run --rm --network=host -e NATS_TOKEN_SECRET="your-secret-key" nats-auth-tool
+docker run --rm --network=host -e NATS_TOKEN_SECRET="your-secret-key" -e NATS_URL="nats://localhost:4222" nats-auth-tool
 ```
 
 ### Running generate_token
@@ -102,7 +107,7 @@ Generated token: <jwt-token-string>
 Generate and test a token (requires NATS server access):
 
 ```bash
-docker run --rm --network=host -e NATS_TOKEN_SECRET="your-secret-key" nats-auth-tool generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}' -test=true
+docker run --rm --network=host -e NATS_TOKEN_SECRET="your-secret-key" nats-auth-tool generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}' -server="your-nats-server:4222"
 ```
 
 Output:
@@ -205,4 +210,3 @@ jobs:
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
-

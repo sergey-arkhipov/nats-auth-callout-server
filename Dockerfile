@@ -1,12 +1,11 @@
 # Stage 1: Build the Go binaries
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Copy go.mod and go.sum (if they exist) to cache dependencies
 COPY go.mod go.sum* ./
-COPY auth-server/go.mod auth-server/go.sum* ./auth-server/
 RUN go mod download
 
 # Copy source files
@@ -17,7 +16,7 @@ COPY auth-server/ ./auth-server/
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/generate_token generate_token.go
 
 # Build auth-server binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/auth-server ./auth-server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/auth_server ./auth-server/main.go
 
 # Stage 2: Create minimal runtime image
 FROM alpine:latest
@@ -27,13 +26,16 @@ WORKDIR /app
 
 # Copy binaries from builder
 COPY --from=builder /app/generate_token /app/generate_token
-COPY --from=builder /app/auth-server /app/auth-server
+COPY --from=builder /app/auth_server /app/auth_server
 
 # Copy config.yml
 COPY config.yml /app/config.yml
+
+# Ensure binaries are executable
+RUN chmod +x /app/generate_token /app/auth_server
 
 # Expose port 4222 (NATS default, if auth-server uses it)
 EXPOSE 4222
 
 # Set default entrypoint to run auth-server
-ENTRYPOINT ["/app/auth-server"]
+ENTRYPOINT ["/app/auth_server"]
