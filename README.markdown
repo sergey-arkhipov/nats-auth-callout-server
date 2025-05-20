@@ -10,26 +10,42 @@ This project provides a Go-based toolset for NATS authentication, including a CL
 
 ## Prerequisites
 
-- **Go**: Version 1.22 or later (for local development, optional if using Docker).
+- **Go**: Version 1.23 or later (for local development, optional if using Docker).
 - **Docker**: Required to build and run the containerized application.
 - **NATS Server**: A running NATS server (e.g., at `nats://localhost:4222`) configured for JWT authentication.
 - **Environment Variable**: `NATS_TOKEN_SECRET` must be set for `generate_token` to sign JWT tokens.
 
 ## Project Structure
 
-```
+````bash
+
 .
-├── generate_token.go       # CLI tool to generate and test JWT tokens
-├── auth-server/
-│   ├── main.go            # NATS authentication service
-│   ├── go.mod             # Go module file (optional)
-│   └── go.sum             # Go dependencies (optional)
-├── config.yml             # Configuration for auth-server
-├── go.mod                 # Root Go module file (optional)
-├── go.sum                 # Root Go dependencies (optional)
-├── Dockerfile             # Builds both binaries and includes config
-└── README.md              # Project documentation
-```
+├── auth-server                              # CLI tool to generate and test JWT tokens
+│   ├── auth
+│   │   └── types.go
+│   ├── authkeys
+│   │   ├── server_keys.go                   # Server connect
+│   │   └── server_keys_test.go
+│   ├── authresponse
+│   │   ├── handler.go
+│   │   └── handler_test.go
+│   ├── config
+│   │   ├── config.go
+│   │   └── config_test.go
+│   ├── main.go                             # NATS authentication service
+│   ├── tokenvalidation
+│   │   ├── tokenvalidation.go
+│   │   └── tokenvalidation_test.go
+│   └── usersdebug
+│       └── users.go
+├── config.yml                              # Configuration for auth-server
+├── Dockerfile
+├── Dockerfile.nats
+├── generate_token.go
+├── go.mod                                  # Root Go module file (optional)
+├── go.sum                                  # Root Go dependencies (optional)
+├── nats-server.conf                       # Config for NATS Server with callout
+└── README.markdown                        # Project documentation```
 
 ## Setup
 
@@ -38,9 +54,17 @@ This project provides a Go-based toolset for NATS authentication, including a CL
 ```bash
 git clone <repository-url>
 cd nats-auth-tool
-```
+````
 
 ### 2. Configure Environment
+
+Set environment variables:
+
+```bash
+export NATS_URL="nats://your-nats-server:4222"
+export NATS_TOKEN_SECRET="your-secret-key"
+
+```
 
 Build custom NATS server with nats-server.conf:
 
@@ -51,7 +75,7 @@ docker build --no-cache -t nats-server-with-callback -f Dockerfile.nats .
 Ensure a NATS server is running (e.g., locally):
 
 ```bash
-docker run -d -p 4222:4222 nats-server-with-callback
+docker run -d -p 4222:4222 -p 8222:8222 -p 9222:9222 --name nats nats-server-with-callback
 ```
 
 ### 3. Build the Docker Image
@@ -71,7 +95,7 @@ The `auth-server` is the default service, reading configuration from `/app/confi
 Run the service:
 
 ```bash
-docker run --rm -e NATS_TOKEN_SECRET="your-secret-key" -e NATS_URL="nats://your-nats-server:4222" nats-auth-tool
+docker run --rm  -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" -e NATS_URL="$NATS_URL" --name auth-nats nats-auth-tool
 ```
 
 Configuration:
@@ -82,12 +106,6 @@ Configuration:
 
     The service doesn't expose any ports as it's a client to NATS server, not a server itself
 
-If the NATS server runs on the host and you want to connect to it directly, you can use host networking:
-
-```bash
-docker run --rm --network=host -e NATS_TOKEN_SECRET="your-secret-key" -e NATS_URL="nats://localhost:4222" nats-auth-tool
-```
-
 ### Running generate_token
 
 The `generate_token` binary generates JWT tokens and can test NATS connectivity with the `-test=true` flag.
@@ -95,7 +113,7 @@ The `generate_token` binary generates JWT tokens and can test NATS connectivity 
 Generate a token without testing:
 
 ```bash
-docker run --rm -e NATS_TOKEN_SECRET="your-secret-key" nats-auth-tool generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}'
+docker run --rm -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" nats-auth-tool generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}'
 ```
 
 Output:
@@ -104,10 +122,10 @@ Output:
 Generated token: <jwt-token-string>
 ```
 
-Generate and test a token (requires NATS server access):
+Generate and test a token (requires NATS server access and running auth-server):
 
 ```bash
-docker run --rm --network=host -e NATS_TOKEN_SECRET="your-secret-key" nats-auth-tool generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}' -server="your-nats-server:4222"
+docker exec -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" auth-nats /app/generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}' -server="$NATS_URL"
 ```
 
 Output:
@@ -120,7 +138,7 @@ No Streams defined
 Use default JSON input:
 
 ```bash
-docker run --rm --network=host -e NATS_TOKEN_SECRET="your-secret-key" nats-auth-tool generate_token -test=true
+docker run --rm -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" nats-auth-tool generate_token
 ```
 
 Output:
@@ -128,7 +146,6 @@ Output:
 ```
 No input provided; using default JSON with _INBOX.> permission for NATS request-reply
 Generated token: <jwt-token-string>
-No Streams defined
 ```
 
 ### Configuration

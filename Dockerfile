@@ -27,15 +27,16 @@ WORKDIR /app
 # Copy binaries from builder
 COPY --from=builder /app/generate_token /app/generate_token
 COPY --from=builder /app/auth_server /app/auth_server
+COPY entrypoint.sh /app//entrypoint.sh
 
 # Copy config.yml
 COPY config.yml /app/config.yml
 
 # Ensure binaries are executable
-RUN chmod +x /app/generate_token /app/auth_server
+RUN chmod +x /app/generate_token /app/auth_server /app/entrypoint.sh
 
 # Expose port 4222 (NATS default, if auth-server uses it)
 EXPOSE 4222
 
 # Set default entrypoint to run auth-server
-ENTRYPOINT ["/app/auth_server"]
+ENTRYPOINT ["/app/entrypoint.sh"]

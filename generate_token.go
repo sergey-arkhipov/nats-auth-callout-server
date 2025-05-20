@@ -198,7 +198,7 @@ func main() {
 				"deny": []
 			}
 		},
-		"account": "PROD",
+		"account": "DEVELOPMENT",
 		"ttl": 600
 	}`
 

@@ -46,18 +46,18 @@ type NatsTokenClaims struct {
 //	string: The user ID extracted from the token claims.
 //	map[string]any: The permissions extracted from the token claims.
 //	error: An error if validation fails (e.g., invalid format, signature, or expired token).
-func ValidateNatsToken(tokenString string) (string, map[string]any, error) {
+func ValidateNatsToken(tokenString string) (*NatsTokenClaims, error) {
 	// Retrieve the secret key from environment variable
 	secret := os.Getenv("NATS_TOKEN_SECRET")
 	if secret == "" {
 		logrus.Error("NATS_TOKEN_SECRET environment variable is not set")
-		return "", nil, errors.New("NATS_TOKEN_SECRET environment variable is not set")
+		return nil, errors.New("NATS_TOKEN_SECRET environment variable is not set")
 	}
 
 	// Check basic token format
 	if len(strings.Split(tokenString, ".")) != 3 {
 		logrus.WithField("token", tokenString[:10]+"...").Debug("Invalid token format")
-		return "", nil, errors.New("invalid token format")
+		return nil, errors.New("invalid token format")
 	}
 
 	// Parse JWT with custom claims
@@ -82,24 +82,24 @@ func ValidateNatsToken(tokenString string) (string, map[string]any, error) {
 
 	if err != nil {
 		logrus.WithError(err).Debug("JWT parsing failed")
-		return "", nil, err
+		return nil, err
 	}
 	if !token.Valid {
 		logrus.Debug("Token is not valid")
-		return "", nil, errors.New("invalid token signature")
+		return nil, errors.New("invalid token signature")
 	}
 
 	// Check token expiration
 	if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
 		logrus.WithField("exp", claims.ExpiresAt).Debug("Token expired")
-		return "", nil, errors.New("token expired")
+		return nil, errors.New("token expired")
 	}
 
 	// Ensure user ID is present
 	if claims.UserID == "" {
 		logrus.Debug("Missing user_id in token")
-		return "", nil, errors.New("missing user_id in token")
+		return nil, errors.New("missing user_id in token")
 	}
 
-	return claims.UserID, claims.Permissions, nil
+	return claims, nil
 }

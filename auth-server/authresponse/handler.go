@@ -101,7 +101,11 @@ func (h *Handler) decodeRequest(req micro.Request) ([]byte, error) {
 func (h *Handler) validateUser(rc *jwt.AuthorizationRequestClaims) (*auth.User, string, error) {
 	// Token-based authentication
 	if rc.ConnectOptions.Token != "" {
-		userID, permissions, err := tokenvalidation.ValidateNatsToken(rc.ConnectOptions.Token)
+		// userID, permissions, err := tokenvalidation.ValidateNatsToken(rc.ConnectOptions.Token)
+		user, err := tokenvalidation.ValidateNatsToken(rc.ConnectOptions.Token)
+		userID := user.UserID
+		permissions := user.Permissions
+
 		if err != nil {
 			logrus.WithError(err).Error("Failed to validate nats_token")
 			return nil, "", fmt.Errorf("validating nats_token: %v", err)
@@ -161,8 +165,8 @@ func (h *Handler) validateUser(rc *jwt.AuthorizationRequestClaims) (*auth.User, 
 
 		return &auth.User{
 			Permissions: jwtPerms,
-			Pass:        "",            // Password not used for token auth
-			Account:     "DEVELOPMENT", // Match alice's account from New()
+			Pass:        "",           // Password not used for token auth
+			Account:     user.Account, // Match alice's account from New()
 		}, userID, nil
 	}
 
