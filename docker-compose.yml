@@ -1,5 +1,4 @@
-version: "3.8"
-
+---
 services:
   nats-server:
     build:
@@ -11,8 +10,6 @@ services:
       - "4222:4222"
       - "8222:8222"
       - "9222:9222"
-    volumes:
-      - ./nats-server.conf:/etc/nats/nats-server.conf
 
   auth-server:
     build:
