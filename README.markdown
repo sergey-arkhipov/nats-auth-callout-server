@@ -125,7 +125,7 @@ Generated token: <jwt-token-string>
 Generate and test a token (requires NATS server access and running auth-server):
 
 ```bash
-docker exec -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" auth-nats /app/generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}' -server="$NATS_URL"
+docker exec -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" auth-nats /app/generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}' -server="$NATS_URL" -test=true
 ```
 
 Output:
