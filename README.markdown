@@ -75,7 +75,7 @@ docker build --no-cache -t nats-server-with-callback -f Dockerfile.nats .
 Ensure a NATS server is running (e.g., locally):
 
 ```bash
-docker run -d -p 4222:4222 -p 8222:8222 -p 9222:9222 --name nats nats-server-with-callback
+docker run -d -p 4222:4222 -p 8222:8222 -p 9222:9222 --name nats-server nats-server-with-callback
 ```
 
 ### 3. Build the Docker Image
@@ -95,7 +95,7 @@ The `auth-server` is the default service, reading configuration from `/app/confi
 Run the service:
 
 ```bash
-docker run --rm  -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" -e NATS_URL="$NATS_URL" --name auth-nats nats-auth-tool
+docker run --rm  -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" -e NATS_URL="$NATS_URL" --name auth-server nats-auth-tool
 ```
 
 Configuration:
@@ -113,7 +113,7 @@ The `generate_token` binary generates JWT tokens and can test NATS connectivity 
 Generate a token without testing:
 
 ```bash
-docker run --rm -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" nats-auth-tool generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}'
+docker run --rm -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" nats-auth-tool generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"TEST","ttl":600}'
 ```
 
 Output:
@@ -125,7 +125,7 @@ Generated token: <jwt-token-string>
 Generate and test a token (requires NATS server access and running auth-server):
 
 ```bash
-docker exec -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" auth-nats /app/generate_token -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"PROD","ttl":600}' -server="$NATS_URL"
+docker exec -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" auth-server /app/generate_token -test=true -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"TEST","ttl":600}' -server="$NATS_URL"
 ```
 
 Output:
@@ -146,6 +146,41 @@ Output:
 ```
 No input provided; using default JSON with _INBOX.> permission for NATS request-reply
 Generated token: <jwt-token-string>
+```
+
+### Running with Docker Compose (optional)
+
+You can also run everything using `docker-compose` for local development convenience.
+
+Run all services:
+
+```bash
+docker compose up
+```
+
+Generate token using the token-generator service:
+
+```bash
+docker compose run --rm token-generator -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"]},"sub":{"allow":["_INBOX.>","TEST.>"]}},"account":"TEST","ttl":600}'
+```
+
+Output:
+
+```
+Generated token: <jwt-token-string>
+```
+
+You can also test the token immediately:
+
+```bash
+docker compose run --rm token-generator -test=true -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"]},"sub":{"allow":["_INBOX.>","TEST.>"]}},"account":"TEST","ttl":600}' -server="$NATS_URL"
+```
+
+Output:
+
+```
+Generated token: <jwt-token-string>
+No Streams defined
 ```
 
 ### Configuration
