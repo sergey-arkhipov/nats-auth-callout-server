@@ -126,6 +126,7 @@ Generate and test a token (requires NATS server access and running auth-server):
 
 ```bash
 docker exec -e NATS_TOKEN_SECRET="$NATS_TOKEN_SECRET" auth-server /app/generate_token -test=true -input '{"user_id":"bob","permissions":{"pub":{"allow":["$JS.API.>"],"deny":[]},"sub":{"allow":["_INBOX.>","TEST.>"],"deny":[]}},"account":"TEST","ttl":600}' -server="$NATS_URL"
+
 ```
 
 Output:
