@@ -1,0 +1,34 @@
+---
+services:
+  nats-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.nats
+    image: nats-server-with-callback
+    container_name: nats-server
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      - "9222:9222"
+
+  auth-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nats-auth-tool
+    container_name: auth-server
+    depends_on:
+      - nats-server
+    environment:
+      NATS_URL: nats://nats-server:4222
+      NATS_TOKEN_SECRET: ${NATS_TOKEN_SECRET:?err}
+    entrypoint: ["/app/entrypoint.sh"]
+
+  token-generator:
+    image: nats-auth-tool
+    depends_on:
+      - nats-server
+    environment:
+      NATS_TOKEN_SECRET: ${NATS_TOKEN_SECRET:?err}
+    entrypoint: ["/app/generate_token"]
+    profiles: [manual]
