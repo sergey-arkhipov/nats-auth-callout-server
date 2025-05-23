@@ -80,8 +80,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("cannot create userRepo: %w", err)
 	}
-
 	log.Print("Repo %w", userRepo)
+
 	authHandler := authresponse.NewHandler(keyPairs, userRepo)
 
 	err = srv.
