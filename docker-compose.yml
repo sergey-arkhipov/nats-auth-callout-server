@@ -10,6 +10,7 @@ services:
       - "4222:4222"
       - "8222:8222"
       - "9222:9222"
+    restart: unless-stopped
 
   auth-server:
     build:
@@ -21,14 +22,15 @@ services:
       - nats-server
     environment:
       NATS_URL: nats://nats-server:4222
-      NATS_TOKEN_SECRET: ${NATS_TOKEN_SECRET:?err}
+      NATS_TOKEN_SECRET: ${NATS_TOKEN_SECRET:-123456}
     entrypoint: ["/app/entrypoint.sh"]
+    restart: unless-stopped
 
   token-generator:
     image: nats-auth-tool
     depends_on:
       - nats-server
     environment:
-      NATS_TOKEN_SECRET: ${NATS_TOKEN_SECRET:?err}
+      NATS_TOKEN_SECRET: ${NATS_TOKEN_SECRET:-123456}
     entrypoint: ["/app/generate_token"]
     profiles: [manual]
