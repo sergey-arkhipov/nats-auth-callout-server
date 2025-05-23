@@ -76,7 +76,12 @@ func run() error {
 	}
 
 	// Endpoint setup
-	userRepo := usersdebug.New()
+	userRepo, err := usersdebug.New()
+	if err != nil {
+		return fmt.Errorf("cannot read users.json file: %w", err)
+	}
+
+	log.Print("Repo %w", userRepo)
 	authHandler := authresponse.NewHandler(keyPairs, userRepo)
 
 	err = srv.

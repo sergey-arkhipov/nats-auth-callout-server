@@ -15,9 +15,9 @@ type Repository struct {
 }
 
 // New returns a Repository struct with users loaded from users.json
-func New(filePath string) (*Repository, error) {
+func New() (*Repository, error) {
 	// Read the JSON file
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile("users.json")
 	if err != nil {
 		return nil, err
 	}
