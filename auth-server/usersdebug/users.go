@@ -14,17 +14,6 @@ type Repository struct {
 	users map[string]*auth.User
 }
 
-// FakeRepository repository for stub
-var FakeRepository = &Repository{
-	users: map[string]*auth.User{
-		"fake": {
-			Pass:        "fake",
-			Account:     "Fake",
-			Permissions: jwt.Permissions{}, // Empty permissions, as none were specified
-		},
-	},
-}
-
 // New returns a Repository struct with users loaded from users.json
 func New() (*Repository, error) {
 	// Read the JSON file

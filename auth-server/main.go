@@ -78,7 +78,7 @@ func run() error {
 	// Endpoint setup
 	userRepo, err := usersdebug.New()
 	if err != nil {
-		userRepo = usersdebug.FakeRepository
+		return fmt.Errorf("cannot create userRepo: %w", err)
 	}
 
 	log.Print("Repo %w", userRepo)
