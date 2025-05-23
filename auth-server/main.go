@@ -78,7 +78,7 @@ func run() error {
 	// Endpoint setup
 	userRepo, err := usersdebug.New()
 	if err != nil {
-		return fmt.Errorf("cannot read users.json file: %w", err)
+		userRepo = usersdebug.FakeRepository
 	}
 
 	log.Print("Repo %w", userRepo)
