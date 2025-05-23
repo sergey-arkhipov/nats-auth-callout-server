@@ -1,0 +1,26 @@
+{
+  "sys": {
+    "Pass": "sys",
+    "Account": "SYS"
+  },
+  "alice": {
+    "Pass": "alice",
+    "Account": "DEVELOPMENT",
+    "Permissions": {
+      "Pub": {
+        "Allow": ["$JS.API.STREAM.LIST"]
+      },
+      "Sub": {
+        "Allow": ["_INBOX.>", "TEST.test"]
+      }
+    }
+  },
+  "test": {
+    "Pass": "test",
+    "Account": "TEST"
+  },
+  "dev": {
+    "Pass": "dev",
+    "Account": "DEVELOPMENT"
+  }
+}
