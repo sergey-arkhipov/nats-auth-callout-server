@@ -31,9 +31,9 @@ COPY entrypoint.sh /app/entrypoint.sh
 
 # Copy config.yml
 COPY config.yml /app/config.yml
-#
-# Copy users.json
-COPY /users.json /app/users.json
+
+# Copy users.yaml
+COPY /users.yaml /app/users.yaml
 
 # Ensure binaries are executable
 RUN chmod +x /app/generate_token /app/auth_server /app/entrypoint.sh

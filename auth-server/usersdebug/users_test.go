@@ -9,20 +9,20 @@ import (
 	"github.com/nats-io/jwt/v2"
 )
 
-// TestNew tests the New function for creating a Repository from users.json
+// TestNew tests the New function for creating a Repository from users.yaml
 func TestNew(t *testing.T) {
-	// Helper function to create a temporary users.json file in the current directory
-	createTempUsersJSON := func(t *testing.T, content string) func() {
+	// Helper function to create a temporary users.yaml file in the current directory
+	createTempUsersYAML := func(t *testing.T, content string) func() {
 		t.Helper()
-		// Ensure the file is named "users.json" in the current directory
-		filePath := "users.json"
+		// Ensure the file is named "users.yaml" in the current directory
+		filePath := "users.yaml"
 		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
-			t.Fatalf("Failed to write users.json: %v", err)
+			t.Fatalf("Failed to write users.yaml: %v", err)
 		}
 		// Return a cleanup function
 		return func() {
 			if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
-				t.Errorf("Failed to clean up users.json: %v", err)
+				t.Errorf("Failed to clean up users.yaml: %v", err)
 			}
 		}
 	}
@@ -30,23 +30,28 @@ func TestNew(t *testing.T) {
 	// Test cases
 	tests := []struct {
 		name        string
-		jsonContent string
+		yamlContent string
 		wantErr     bool
 		validate    func(t *testing.T, repo *Repository)
 	}{
 		{
-			name: "Valid JSON file",
-			jsonContent: `{
-				"sys": {"Pass": "sys", "Account": "SYS"},
-				"alice": {
-					"Pass": "alice",
-					"Account": "DEVELOPMENT",
-					"Permissions": {
-						"Pub": {"Allow": ["$JS.API.STREAM.LIST"]},
-						"Sub": {"Allow": ["_INBOX.>", "TEST.test"]}
-					}
-				}
-			}`,
+			name: "Valid YAML file",
+			yamlContent: `
+sys:
+  Pass: sys
+  Account: SYS
+alice:
+  Pass: alice
+  Account: DEVELOPMENT
+  Permissions:
+    pub:
+      allow:
+        - $JS.API.STREAM.LIST
+    sub:
+      allow:
+        - _INBOX.>
+        - TEST.test
+`,
 			wantErr: false,
 			validate: func(t *testing.T, repo *Repository) {
 				if len(repo.users) != 2 {
@@ -61,21 +66,24 @@ func TestNew(t *testing.T) {
 				if user, exists := repo.users["alice"]; exists && len(user.Permissions.Pub.Allow) != 1 {
 					t.Errorf("Expected alice to have 1 Pub permission, got %v", user.Permissions.Pub.Allow)
 				}
+				if user, exists := repo.users["alice"]; exists && len(user.Permissions.Sub.Allow) != 2 {
+					t.Errorf("Expected alice to have 2 Sub permissions, got %v", user.Permissions.Sub.Allow)
+				}
 			},
 		},
 		{
-			name:        "Non-existent JSON file",
-			jsonContent: "", // No file created
+			name:        "Non-existent YAML file",
+			yamlContent: "", // No file created
 			wantErr:     true,
 		},
 		{
-			name:        "Invalid JSON file",
-			jsonContent: `{invalid json}`,
+			name:        "Invalid YAML file",
+			yamlContent: `invalid yaml: : :`,
 			wantErr:     true,
 		},
 		{
-			name:        "Empty JSON file",
-			jsonContent: `{}`,
+			name:        "Empty YAML file",
+			yamlContent: `{}`,
 			wantErr:     false,
 			validate: func(t *testing.T, repo *Repository) {
 				if len(repo.users) != 0 {
@@ -87,10 +95,10 @@ func TestNew(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create users.json if jsonContent is provided
+			// Create users.yaml if yamlContent is provided
 			var cleanup func()
-			if tt.jsonContent != "" {
-				cleanup = createTempUsersJSON(t, tt.jsonContent)
+			if tt.yamlContent != "" {
+				cleanup = createTempUsersYAML(t, tt.yamlContent)
 				defer cleanup()
 			}
 

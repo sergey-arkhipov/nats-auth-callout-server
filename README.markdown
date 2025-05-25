@@ -44,6 +44,7 @@ This project provides a Go-based toolset for NATS authentication, including a CL
 ├── generate_token.go
 ├── go.mod                                  # Root Go module file (optional)
 ├── go.sum                                  # Root Go dependencies (optional)
+├── users.yaml                              # Users list with permission
 ├── nats-server.conf                       # Config for NATS Server with callout
 └── README.markdown                        # Project documentation```
 
@@ -210,6 +211,10 @@ The `generate_token` binary uses the `NATS_TOKEN_SECRET` environment variable an
 - `-input`: JSON string with `user_id`, `permissions`, `account`, and `ttl`.
 - `-server`: NATS server URL (default: `nats://localhost:4222`).
 - `-test`: Test NATS connection (default: `false`).
+
+### Work with users list
+
+`users.yaml` - file with users and permissions. Can be used for debug or in parallel with token auth. Pass users.yaml to docker. Empty file will disable user login|pass auth.
 
 ## Future Improvements
 
