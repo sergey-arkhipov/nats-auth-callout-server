@@ -1,0 +1,21 @@
+# Configuration for test users
+sys:
+  Pass: sys
+  Account: SYS # System account
+alice:
+  Pass: alice
+  Account: DEVELOPMENT
+  Permissions:
+    pub:
+      allow: # Allowed publish permissions
+        - $JS.API.STREAM.LIST
+    sub:
+      allow: # Allowed subscribe permissions
+        - _INBOX.>
+        - TEST.test
+test:
+  Pass: test
+  Account: TEST
+dev:
+  Pass: dev
+  Account: DEVELOPMENT

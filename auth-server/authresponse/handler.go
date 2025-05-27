@@ -103,13 +103,12 @@ func (h *Handler) validateUser(rc *jwt.AuthorizationRequestClaims) (*auth.User, 
 	if rc.ConnectOptions.Token != "" {
 		// userID, permissions, err := tokenvalidation.ValidateNatsToken(rc.ConnectOptions.Token)
 		user, err := tokenvalidation.ValidateNatsToken(rc.ConnectOptions.Token)
-		userID := user.UserID
-		permissions := user.Permissions
-
 		if err != nil {
 			logrus.WithError(err).Error("Failed to validate nats_token")
 			return nil, "", fmt.Errorf("validating nats_token: %v", err)
 		}
+		userID := user.UserID
+		permissions := user.Permissions
 
 		// Convert permissions to jwt.Permissions
 		jwtPerms := jwt.Permissions{}
