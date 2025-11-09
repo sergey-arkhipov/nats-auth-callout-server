@@ -5,23 +5,23 @@
 
 version: 2
 updates:
-  - package-ecosystem: "bundler"
+  # Настройка для Go Modules
+  - package-ecosystem: "gomod"
+    # Директория, где находится файл go.mod
     directory: "/"
     schedule:
+      # Интервал проверки обновлений
       interval: "weekly"
-      day: "monday" # New: Specific check day
-      time: "09:00" # New: Time in UTC
-    allow:
-      - dependency-name: "rails"
-      - dependency-name: "rspec*"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      # День недели, когда будет проводиться проверка
+      day: "monday"
+      # Время проверки (в UTC)
+      time: "09:00"
+    # Ограничение на количество одновременно открытых PR от Dependabot
+    open-pull-requests-limit: 5
+    # Назначение ревьюеров
+    reviewers:
+      - "sergey-arkhipov"
+    labels:
+      - "dependencies"
     commit-message:
       prefix: "chore(deps)"
-      prefix-development: "chore(deps-dev)" # New: Separate prefix for dev deps
-    open-pull-requests-limit: 5
-    reviewers: # New: Auto-assign reviewers
-      - "sergey-arkhipov"
-    labels: # New: Auto-label PRs
-      - "dependencies"
