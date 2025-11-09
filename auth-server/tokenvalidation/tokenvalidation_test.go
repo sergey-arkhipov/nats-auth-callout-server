@@ -26,7 +26,7 @@ func TestMinimalJwtValidation(t *testing.T) {
 
 	// Оригинальный токен
 	parsedClaims := &NatsTokenClaims{}
-	parsedToken, err := jwt.ParseWithClaims(tokenString, parsedClaims, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.ParseWithClaims(tokenString, parsedClaims, func(_ *jwt.Token) (any, error) {
 		return []byte(secret), nil
 	})
 	if err != nil || !parsedToken.Valid {
@@ -37,9 +37,9 @@ func TestMinimalJwtValidation(t *testing.T) {
 	}
 
 	// Измененный токен (последний символ → 8)
-	modifiedToken := tokenString[:len(tokenString)-1] + "8"
+	modifiedToken := tokenString[:len(tokenString)-1] + "6"
 	parsedClaims = &NatsTokenClaims{}
-	parsedToken, err = jwt.ParseWithClaims(modifiedToken, parsedClaims, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err = jwt.ParseWithClaims(modifiedToken, parsedClaims, func(_ *jwt.Token) (any, error) {
 		return []byte(secret), nil
 	})
 	if err == nil || parsedToken.Valid {
