@@ -5,7 +5,7 @@ go 1.25
 require (
 	github.com/nats-io/jwt/v2 v2.8.0 // Latest is v2.10.7 (from nats-server releases) :cite[1]
 	github.com/nats-io/nats.go v1.47.0 // Latest as of 2025-05-02 :cite[5]
-	github.com/nats-io/nkeys v0.4.11 // Used in nats.go v1.41.2 :cite[5]
+	github.com/nats-io/nkeys v0.4.12 // Used in nats.go v1.41.2 :cite[5]
 )
 
 require (
@@ -31,8 +31,8 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
