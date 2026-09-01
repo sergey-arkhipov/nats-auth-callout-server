@@ -3,7 +3,7 @@ module sergey-arkhipov/nats-auth-callout-server
 go 1.25.0
 
 require (
-	github.com/nats-io/jwt/v2 v2.8.1 // Latest is v2.10.7 (from nats-server releases) :cite[1]
+	github.com/nats-io/jwt/v2 v2.8.2 // Latest is v2.10.7 (from nats-server releases) :cite[1]
 	github.com/nats-io/nats.go v1.52.0 // Latest as of 2025-05-02 :cite[5]
 	github.com/nats-io/nkeys v0.4.16 // Used in nats.go v1.41.2 :cite[5]
 )
