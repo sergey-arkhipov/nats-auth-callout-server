@@ -5,7 +5,7 @@ go 1.27
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/nats-io/jwt/v2 v2.8.2 // Latest is v2.10.7 (from nats-server releases) :cite[1]
-	github.com/nats-io/nats.go v1.54.0 // Latest as of 2025-05-02 :cite[5]
+	github.com/nats-io/nats.go v1.55.0 // Latest as of 2025-05-02 :cite[5]
 	github.com/nats-io/nkeys v0.4.16 // Used in nats.go v1.41.2 :cite[5]
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/viper v1.21.0
